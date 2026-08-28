@@ -286,18 +286,7 @@ def render_sidebar(
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
                 <div style="font-size:1.8rem;">🧠</div>
                 <div>
-                    <div style="
-                        font-family:'Space Grotesk', sans-serif;
-                        font-weight:700;
-                        font-size:1.3rem;
-                        line-height:1.1;
-                        background: linear-gradient(90deg, #8b6aff, #38d6ff, #ff62b0, #8b6aff);
-                        background-size: 300% 300%;
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                        animation: neuraColorCycle 4s ease infinite;
-                    ">NeuraDocs</div>
+                    <div class="neura-sidebar-brand">NeuraDocs</div>
                     <div style="font-size:0.75rem; color:var(--text-lo);">AI Document Intelligence</div>
                 </div>
             </div>

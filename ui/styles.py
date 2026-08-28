@@ -89,14 +89,14 @@ section[data-testid="stSidebar"] > div {{
     padding-top: 1rem;
 }}
 
-/* Main Title Gradient — animated hue cycling */
+/* Main Title Gradient — animated color-shift */
 .neura-brand {{
     font-family: 'Space Grotesk', sans-serif;
     font-size: 2.3rem;
     font-weight: 700;
     letter-spacing: -0.5px;
-    background: linear-gradient(90deg, #8b6aff 0%, #38d6ff 50%, #ff62b0 100%);
-    background-size: 300% 300%;
+    background: linear-gradient(90deg, #8b6aff, #38d6ff, #ff62b0, #ffaa44, #38d6ff, #8b6aff);
+    background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -104,13 +104,28 @@ section[data-testid="stSidebar"] > div {{
     align-items: center;
     gap: 8px;
     margin-bottom: 0.2rem;
-    animation: neuraColorCycle 4s ease infinite;
+    animation: neuraColorCycle 5s ease infinite;
 }}
+
+/* Sidebar smaller version of same animated logo */
+.neura-sidebar-brand {{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    line-height: 1.1;
+    background: linear-gradient(90deg, #8b6aff, #38d6ff, #ff62b0, #ffaa44, #38d6ff, #8b6aff);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: neuraColorCycle 5s ease infinite;
+    display: inline-block;
+}}
+
 @keyframes neuraColorCycle {{
-    0%   {{ background-position: 0% 50%; filter: hue-rotate(0deg); }}
-    33%  {{ background-position: 100% 50%; filter: hue-rotate(90deg); }}
-    66%  {{ background-position: 50% 0%; filter: hue-rotate(200deg); }}
-    100% {{ background-position: 0% 50%; filter: hue-rotate(360deg); }}
+    0%   {{ background-position: 0% 50%; }}
+    50%  {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
 }}
 
 /* Developer Badge — premium pill */
