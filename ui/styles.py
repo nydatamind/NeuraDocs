@@ -144,6 +144,7 @@ section[data-testid="stSidebar"] > div {{
     color: var(--text-mid);
     box-shadow: 0 0 12px rgba(124,92,255,0.18), inset 0 0 8px rgba(53,213,255,0.06);
     animation: devBadgeGlow 3s ease-in-out infinite alternate;
+    white-space: nowrap;
 }}
 .dev-badge .dev-dot {{
     width: 6px;
