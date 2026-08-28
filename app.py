@@ -185,10 +185,10 @@ with col_h2:
     all_docs = db.get_documents()
     num_docs = len(all_docs)
     num_chunks = len(vector_store.chunks)
-    if num_docs > 0:
+    if num_docs > 0 or True: # Keep it consistent regardless of documents presence
         st.markdown(
             f'<div style="text-align:right; padding-top:10px;">'
-            f'<span class="pill-badge pill-success"><span class="pill-dot"></span>{num_docs} Docs ({num_chunks} Chunks) Indexed</span>'
+            f'<span style="font-size:0.85rem; color:var(--text-lo); font-weight:500;">Developed by <b>Nitin Yadav</b></span>'
             f'</div>',
             unsafe_allow_html=True,
         )
