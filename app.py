@@ -182,23 +182,14 @@ with col_h1:
     )
 
 with col_h2:
-    all_docs = db.get_documents()
-    num_docs = len(all_docs)
-    num_chunks = len(vector_store.chunks)
-    if num_docs > 0 or True: # Keep it consistent regardless of documents presence
-        st.markdown(
-            f'<div style="text-align:right; padding-top:10px;">'
-            f'<span style="font-size:0.85rem; color:var(--text-lo); font-weight:500;">Developed by <b>Nitin Yadav</b></span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            f'<div style="text-align:right; padding-top:10px;">'
-            f'<span style="font-size:0.85rem; color:var(--text-lo); font-weight:500;">Developed by <b>Nitin Yadav</b></span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+    # Always show developer badge in top-right corner
+    st.markdown(
+        f'<div style="text-align:right; padding-top:6px;">'
+        f'<span class="dev-badge"><span class="dev-dot"></span>Developed by <b>Nitin Yadav</b></span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
 
 # ============================================================================
 # Suggested Prompt Chips (when no chat history)

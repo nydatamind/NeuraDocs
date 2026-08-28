@@ -89,19 +89,69 @@ section[data-testid="stSidebar"] > div {{
     padding-top: 1rem;
 }}
 
-/* Main Title Gradient */
+/* Main Title Gradient — animated hue cycling */
 .neura-brand {{
     font-family: 'Space Grotesk', sans-serif;
     font-size: 2.3rem;
     font-weight: 700;
     letter-spacing: -0.5px;
     background: linear-gradient(90deg, #8b6aff 0%, #38d6ff 50%, #ff62b0 100%);
+    background-size: 300% 300%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
     display: inline-flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 0.2rem;
+    animation: neuraColorCycle 4s ease infinite;
+}}
+@keyframes neuraColorCycle {{
+    0%   {{ background-position: 0% 50%; filter: hue-rotate(0deg); }}
+    33%  {{ background-position: 100% 50%; filter: hue-rotate(90deg); }}
+    66%  {{ background-position: 50% 0%; filter: hue-rotate(200deg); }}
+    100% {{ background-position: 0% 50%; filter: hue-rotate(360deg); }}
+}}
+
+/* Developer Badge — premium pill */
+.dev-badge {{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(124, 92, 255, 0.45);
+    background: linear-gradient(135deg, rgba(124,92,255,0.10), rgba(53,213,255,0.07));
+    backdrop-filter: blur(8px);
+    font-size: 0.78rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-mid);
+    box-shadow: 0 0 12px rgba(124,92,255,0.18), inset 0 0 8px rgba(53,213,255,0.06);
+    animation: devBadgeGlow 3s ease-in-out infinite alternate;
+}}
+.dev-badge .dev-dot {{
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c5cff, #35d5ff);
+    animation: devDotPulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+}}
+.dev-badge b {{
+    background: linear-gradient(90deg, #a07cff, #35d5ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}}
+@keyframes devBadgeGlow {{
+    from {{ box-shadow: 0 0 8px rgba(124,92,255,0.15), inset 0 0 6px rgba(53,213,255,0.04); border-color: rgba(124,92,255,0.35); }}
+    to   {{ box-shadow: 0 0 18px rgba(53,213,255,0.25), inset 0 0 10px rgba(124,92,255,0.08); border-color: rgba(53,213,255,0.55); }}
+}}
+@keyframes devDotPulse {{
+    0%, 100% {{ opacity:1; transform:scale(1); }}
+    50%       {{ opacity:0.5; transform:scale(0.7); }}
 }}
 
 .neura-subhead {{
