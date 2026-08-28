@@ -60,3 +60,15 @@ Given the chat history and the user's latest follow-up question, rewrite the que
 - If the question is already standalone, return it unchanged.
 - Output ONLY the rewritten search query without any explanation, markdown, or commentary.
 """
+
+def get_groq_api_key() -> str:
+    try:
+        import streamlit as st
+        if "GROQ_API_KEY" in st.secrets:
+            key = st.secrets["GROQ_API_KEY"]
+            if key and key != "your-key-here":
+                return key
+    except Exception:
+        pass
+    return os.getenv("GROQ_API_KEY", "")
+
