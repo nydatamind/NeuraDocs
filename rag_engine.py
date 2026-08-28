@@ -18,7 +18,6 @@ from core.config import (
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
     DEFAULT_TOP_K,
-    GROQ_MODELS,
     SYSTEM_PROMPT,
 )
 from core.models import Chunk, DocumentRecord, RetrievedChunk

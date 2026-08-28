@@ -295,6 +295,22 @@ div[data-testid="stChatMessage"] {{
     background: var(--accent-1);
 }}
 
+/* Voice Button iframe transparency */
+iframe[title="streamlit_component"] {{
+    background: transparent !important;
+    border: none !important;
+}}
+
+/* AI Animation label */
+#neura-anim-label {{
+    animation: labelFade 1.4s infinite alternate;
+}}
+@keyframes labelFade {{
+    from {{ opacity: 0.6; }}
+    to   {{ opacity: 1.0; }}
+}}
+
+/* Hide Streamlit branding */
 #MainMenu, footer {{ visibility: hidden; }}
 </style>
 """

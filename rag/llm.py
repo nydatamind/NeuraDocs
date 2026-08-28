@@ -10,7 +10,7 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, Generator, List, Optional, Tuple
 
-from core.config import SYSTEM_PROMPT
+from core.config import SYSTEM_PROMPT, FALLBACK_MODEL
 from core.models import ChatMessage, RetrievedChunk
 
 
@@ -56,7 +56,9 @@ def stream_groq_response(
     history: Optional[List[ChatMessage]] = None,
     temperature: float = 0.2,
 ) -> Generator[str, None, None]:
-    """Stream real token chunks from Groq's chat completion API."""
+    """Stream real token chunks from Groq's chat completion API.
+    Automatically retries with FALLBACK_MODEL if the primary model fails.
+    """
     from groq import Groq
 
     client = Groq(api_key=api_key)
@@ -72,25 +74,37 @@ def stream_groq_response(
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     if history:
-        # Add rolling window of previous non-system turns
         for m in history[-6:]:
             if m.role in ("user", "assistant"):
                 messages.append({"role": m.role, "content": m.content})
 
     messages.append({"role": "user", "content": user_content})
 
-    stream = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=2048,
-        stream=True,
-    )
+    models_to_try = [model]
+    if model != FALLBACK_MODEL:
+        models_to_try.append(FALLBACK_MODEL)
 
-    for chunk in stream:
-        delta = chunk.choices[0].delta
-        if delta and delta.content:
-            yield delta.content
+    last_exc = None
+    for attempt_model in models_to_try:
+        try:
+            stream = client.chat.completions.create(
+                model=attempt_model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=2048,
+                stream=True,
+            )
+            for chunk in stream:
+                delta = chunk.choices[0].delta
+                if delta and delta.content:
+                    yield delta.content
+            return  # success — stop here
+        except Exception as exc:
+            last_exc = exc
+            continue  # silently try fallback
+
+    # Both models failed — raise the last error
+    raise last_exc
 
 
 def call_groq_blocking(

@@ -5,21 +5,19 @@ Production-grade RAG Chat Application featuring:
 - Hybrid Search (BM25 Keyword + FAISS Dense Embeddings via RRF)
 - Contextual Cross-Reranking
 - Multi-Turn Conversational Query Contextualization
-- Universal Multi-Format Loader (PDF, DOCX, TXT, MD, CSV, XLSX, HTML)
+- Universal Multi-Format Loader (PDF, DOCX, PPTX, TXT, MD, CSV, XLSX, HTML)
 - Real-Time Token Streaming with Groq
 - SQLite + FAISS Persistent Vector Storage
 - Multi-Chat Session Management
 - Export to Markdown / TXT / JSON
-- Source Citations with Confidence Scoring
+- Voice-to-Text Input via Web Speech API
 
 Developed by Nitin Yadav
 """
 
 from __future__ import annotations
 
-import hashlib
 import time
-import uuid
 import streamlit as st
 
 # Core imports
@@ -29,7 +27,6 @@ from core.config import (
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
     DEFAULT_TOP_K,
-    GROQ_MODELS,
 )
 from core.database import Database
 from core.models import ChatMessage, ChatSession, Chunk, DocumentRecord
@@ -165,70 +162,12 @@ controls = render_sidebar(
     on_switch_chat=handle_switch_chat,
     on_delete_chat=handle_delete_chat,
     on_rebuild_index=handle_rebuild_index,
+    vector_store=vector_store,
+    hybrid_retriever=hybrid_retriever,
 )
 
 # Apply Theme CSS
 st.markdown(get_css_styles(theme=controls["theme"]), unsafe_allow_html=True)
-
-# ============================================================================
-# Handle File Processing
-# ============================================================================
-
-if controls["process_btn"]:
-    uploaded_files = controls["uploaded_files"]
-    if not uploaded_files:
-        st.sidebar.warning("Please choose one or more files to upload.")
-    else:
-        chunker = StructureAwareChunker(
-            chunk_size=controls["chunk_size"],
-            overlap=controls["chunk_overlap"],
-        )
-        total_files = len(uploaded_files)
-        progress_bar = st.sidebar.progress(0, text="Processing files...")
-        
-        all_new_chunks: list[Chunk] = []
-        next_chunk_id = len(vector_store.chunks)
-
-        for i, file_obj in enumerate(uploaded_files):
-            progress_bar.progress(i / total_files, text=f"Reading {file_obj.name}...")
-            raw_bytes = file_obj.getvalue()
-            checksum = hashlib.md5(raw_bytes).hexdigest()
-
-            try:
-                extracted = extract_document(raw_bytes, file_obj.name)
-                doc_chunks = chunker.chunk_document(extracted, start_chunk_id=next_chunk_id)
-                next_chunk_id += len(doc_chunks)
-
-                doc_record = DocumentRecord(
-                    doc_id=str(uuid.uuid4()),
-                    filename=file_obj.name,
-                    file_type=extracted.file_type,
-                    file_size_bytes=len(raw_bytes),
-                    chunk_count=len(doc_chunks),
-                    page_count=len(extracted.pages),
-                    checksum=checksum,
-                    status="indexed",
-                )
-
-                # Persist to database
-                db.save_document(doc_record, doc_chunks)
-                all_new_chunks.extend(doc_chunks)
-
-            except Exception as e:
-                st.sidebar.error(f"Error parsing {file_obj.name}: {e}")
-
-            progress_bar.progress((i + 1) / total_files, text=f"Indexed {file_obj.name} ✓")
-
-        # Update Vector Store & Hybrid Index
-        if all_new_chunks:
-            all_chunks = db.get_all_chunks()
-            vector_store.rebuild_index(all_chunks)
-            hybrid_retriever._sync_bm25()
-            progress_bar.empty()
-            st.sidebar.success(f"Successfully processed {len(all_new_chunks)} chunks! ✅")
-            st.balloons()
-        else:
-            progress_bar.empty()
 
 # ============================================================================
 # Main Header & Status Dashboard
@@ -301,26 +240,25 @@ active_question = suggested_prompt or user_input
 
 if active_question:
     api_key = controls["api_key"]
-    if not api_key:
-        st.error("⚠️ Please enter your Groq API Key in the sidebar to generate answers.")
-    elif not vector_store.is_ready():
-        st.warning("⚠️ Please upload and process at least one document before asking questions.")
+
+    if not vector_store.is_ready():
+        st.warning("⚠️ Please upload at least one document before asking questions.")
     else:
         # Add User Message to Session
         user_msg = ChatMessage(role="user", content=active_question)
         current_session.messages.append(user_msg)
-        
+
         # If first question, update title
         if len(current_session.messages) <= 2:
             current_session.title = active_question[:30] + ("..." if len(active_question) > 30 else "")
-        
+
         db.save_chat_session(current_session)
         render_message_bubble(user_msg)
 
         # ----------------- RAG Execution Pipeline -----------------
         with st.chat_message("assistant", avatar="🧠"):
             start_time = time.time()
-            
+
             with st.spinner("Analyzing context and retrieving documents..."):
                 # 1. Multi-Turn Query Rewriting
                 search_query = active_question
@@ -333,12 +271,11 @@ if active_question:
                     )
 
                 # 2. Hybrid Retrieval (BM25 + FAISS via RRF)
-                filter_docs = controls["selected_filter_docs"] or None
                 candidate_k = max(controls["top_k"] * 3, 12)
                 candidates = hybrid_retriever.search(
                     query=search_query,
                     top_k=candidate_k,
-                    filter_sources=filter_docs,
+                    filter_sources=None,
                     hybrid_enabled=controls["hybrid_search"],
                 )
 
@@ -375,13 +312,13 @@ if active_question:
             except Exception as e:
                 full_response = (
                     f"❌ **Error communicating with Groq:** `{e}`\n\n"
-                    "Please verify your API key and selected model."
+                    "Please contact the administrator if this persists."
                 )
                 placeholder.markdown(full_response)
 
             latency = time.time() - start_time
 
-            # Format source citations
+            # Build source payload (stored internally, not shown as debug UI)
             source_payload = [
                 {
                     "source": r.chunk.source,
@@ -394,31 +331,7 @@ if active_question:
                 for r in retrieved_chunks
             ]
 
-            # Render Source Accordion immediately
-            if source_payload:
-                num_sources = len(source_payload)
-                unique_docs = len(set(s.get("source") for s in source_payload))
-                conf_pct = int(confidence_score * 100)
-                with st.expander(f"📚 {num_sources} chunk(s) from {unique_docs} document(s) · Confidence: {conf_pct}% · {latency:.2f}s"):
-                    for s in source_payload:
-                        page_label = f" · Page {s.get('page')}" if s.get("page") else ""
-                        section_label = f" · Section: {s.get('section')}" if s.get("section") else ""
-                        st.markdown(
-                            f"""
-                            <div class="src-card">
-                                <div class="src-header">
-                                    <span>📄 <b>{s.get('source')}</b>{page_label}{section_label}</span>
-                                    <span style="font-size:0.75rem; color:var(--accent-2);">Relevance: {s.get('score', 0):.2f}</span>
-                                </div>
-                                <div class="src-preview">
-                                    {s.get('preview', '')}
-                                </div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-
-            # Persist assistant message
+            # Persist assistant message (with sources stored for exports)
             asst_msg = ChatMessage(
                 role="assistant",
                 content=full_response,
@@ -431,7 +344,7 @@ if active_question:
             db.save_chat_session(current_session)
 
 # ============================================================================
-# Export & Utility Controls (at bottom of chat)
+# Export & Voice Controls (at bottom of chat)
 # ============================================================================
 
 if current_session.messages:
@@ -473,6 +386,9 @@ if not current_session.messages and not vector_store.is_ready():
             <p style="color:var(--text-mid); max-width:600px; margin:0 auto 1.5rem auto; font-size:0.95rem;">
                 State-of-the-art Document Intelligence engine with <b>Hybrid Keyword + Semantic Vector Search</b>,
                 <b>Candidate Reranking</b>, and <b>Sub-Second Groq LLM Streaming</b>.
+            </p>
+            <p style="color:var(--text-lo); font-size:0.85rem; margin-bottom:1.5rem;">
+                👈 Upload a document in the sidebar to begin. Processing starts automatically.
             </p>
             <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-top:1rem;">
                 <div class="stat-box" style="min-width:140px;">

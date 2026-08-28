@@ -19,18 +19,10 @@ DB_PATH = DATA_DIR / "neuradocs.db"
 VECTOR_INDEX_DIR = DATA_DIR / "vector_store"
 VECTOR_INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
-# Default LLM Models from Groq
-GROQ_MODELS = {
-    "Llama 3.3 70B Versatile (Recommended)": "llama-3.3-70b-versatile",
-    "Llama 3.1 8B Instant (Ultra-Fast)": "llama-3.1-8b-instant",
-    "Mixtral 8x7B (High Context)": "mixtral-8x7b-32768",
-    "Gemma 2 9B IT (Balanced)": "gemma2-9b-it",
-    "DeepSeek R1 Distill Llama 70B": "deepseek-r1-distill-llama-70b",
-    "GPT-OSS 120B (Best Quality)": "openai/gpt-oss-120b",
-    "GPT-OSS 20B (Fastest)": "openai/gpt-oss-20b",
-}
+# Internal models — not exposed in UI
+DEFAULT_MODEL  = "openai/gpt-oss-20b"   # Primary: fastest
+FALLBACK_MODEL = "openai/gpt-oss-120b"  # Secondary: best quality
 
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 
 # RAG Hyperparameters Defaults

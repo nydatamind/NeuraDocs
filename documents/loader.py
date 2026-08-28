@@ -42,6 +42,8 @@ def extract_document(file_bytes: bytes, filename: str) -> ExtractedDocument:
         return _extract_pdf(file_bytes, filename)
     elif ext == "docx":
         return _extract_docx(file_bytes, filename)
+    elif ext == "pptx":
+        return _extract_pptx(file_bytes, filename)
     elif ext in ("csv", "tsv"):
         return _extract_tabular(file_bytes, filename, delimiter="," if ext == "csv" else "\t")
     elif ext in ("xlsx", "xls"):
@@ -55,7 +57,7 @@ def extract_document(file_bytes: bytes, filename: str) -> ExtractedDocument:
         try:
             return _extract_plain_text(file_bytes, filename, ext)
         except Exception:
-            raise ValueError(f"Unsupported file format '.{ext}'. Supported: PDF, DOCX, TXT, MD, CSV, XLSX, HTML")
+            raise ValueError(f"Unsupported file format '.{ext}'. Supported: PDF, DOCX, PPTX, TXT, MD, CSV, XLSX, HTML")
 
 
 def _extract_pdf(file_bytes: bytes, filename: str) -> ExtractedDocument:
@@ -124,6 +126,46 @@ def _extract_pdf(file_bytes: bytes, filename: str) -> ExtractedDocument:
         pages=pages,
         total_characters=total_chars,
         metadata={"num_pages": len(pages)},
+    )
+
+
+def _extract_pptx(file_bytes: bytes, filename: str) -> ExtractedDocument:
+    """Extract text from PowerPoint presentations slide-by-slide."""
+    from pptx import Presentation
+    from pptx.util import Pt
+
+    prs = Presentation(io.BytesIO(file_bytes))
+    pages: List[ExtractedPage] = []
+
+    for idx, slide in enumerate(prs.slides, start=1):
+        parts = []
+        # Slide title
+        if slide.shapes.title and slide.shapes.title.text.strip():
+            parts.append(f"### {slide.shapes.title.text.strip()}")
+        # All text boxes
+        for shape in slide.shapes:
+            if hasattr(shape, "text_frame"):
+                for para in shape.text_frame.paragraphs:
+                    text = para.text.strip()
+                    if text and text != (slide.shapes.title.text.strip() if slide.shapes.title else ""):
+                        parts.append(text)
+        # Speaker notes
+        if slide.has_notes_slide:
+            notes_text = slide.notes_slide.notes_text_frame.text.strip()
+            if notes_text:
+                parts.append(f"[Notes: {notes_text}]")
+
+        slide_text = "\n".join(parts).strip()
+        if slide_text:
+            pages.append(ExtractedPage(page_number=idx, text=slide_text, has_tables=False))
+
+    total_chars = sum(len(p.text) for p in pages)
+    return ExtractedDocument(
+        filename=filename,
+        file_type="pptx",
+        pages=pages,
+        total_characters=total_chars,
+        metadata={"slides": len(prs.slides)},
     )
 
 

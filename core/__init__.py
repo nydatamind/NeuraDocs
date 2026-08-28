@@ -1,7 +1,7 @@
 from core.models import Chunk, DocumentRecord, RetrievedChunk, ChatMessage, ChatSession
 from core.config import (
-    GROQ_MODELS,
     DEFAULT_MODEL,
+    FALLBACK_MODEL,
     EMBEDDING_MODEL_NAME,
     DEFAULT_CHUNK_SIZE,
     DEFAULT_CHUNK_OVERLAP,
@@ -20,8 +20,8 @@ __all__ = [
     "RetrievedChunk",
     "ChatMessage",
     "ChatSession",
-    "GROQ_MODELS",
     "DEFAULT_MODEL",
+    "FALLBACK_MODEL",
     "EMBEDDING_MODEL_NAME",
     "DEFAULT_CHUNK_SIZE",
     "DEFAULT_CHUNK_OVERLAP",
