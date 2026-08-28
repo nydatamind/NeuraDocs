@@ -73,43 +73,29 @@ def render_sidebar(
 
         st.markdown("<hr style='margin:12px 0;'>", unsafe_allow_html=True)
 
-        # ----------------- Settings -----------------
-        st.markdown("### ⚙️ Settings")
+        # ----------------- API Key & Model Configuration -----------------
+        st.markdown("##### ⚡ LLM & Intelligence")
 
-        # Models (excluding broken GPT-OSS)
-        from core.config import get_groq_api_key
-        api_key = get_groq_api_key()
-
-        # Update models dict
-        valid_models = {
-            "Llama 3.3 70B Versatile (Recommended)": "llama-3.3-70b-versatile",
-            "Llama 3.1 8B Instant (Ultra-Fast)": "llama-3.1-8b-instant",
-            "DeepSeek R1 Distill Llama 70B": "deepseek-r1-distill-llama-70b",
-            "Mixtral 8x7B (High Context)": "mixtral-8x7b-32768",
-            "Gemma 2 9B IT (Balanced)": "gemma2-9b-it",
-        }
+        env_api_key = os.getenv("GROQ_API_KEY", "")
+        api_key = st.text_input(
+            "Groq API Key",
+            type="password",
+            value=st.session_state.get("groq_api_key", env_api_key),
+            placeholder="gsk_...",
+            help="Free API key from console.groq.com/keys",
+        )
+        if api_key:
+            st.session_state["groq_api_key"] = api_key
 
         model_label = st.selectbox(
             "Model",
-            list(valid_models.keys()),
+            list(GROQ_MODELS.keys()),
             index=0,
             help="Choose reasoning, speed, or high context size.",
         )
-        selected_model_id = valid_models[model_label]
+        selected_model_id = GROQ_MODELS[model_label]
 
-        response_style = st.selectbox(
-            "Response Style",
-            ["Detailed", "Concise", "Professional", "Simple"],
-            index=0,
-        )
-
-        st.markdown("<hr style='margin:8px 0;'>", unsafe_allow_html=True)
-        st.markdown("### 🎙️ Voice settings")
-        voice_answers = st.toggle("Voice answers (Read Aloud automatically)", value=False)
-
-        st.markdown("<hr style='margin:8px 0;'>", unsafe_allow_html=True)
-
-        # Document Filter / Scope
+        # ----------------- Document Filtering -----------------
         docs = db.get_documents()
         doc_names = [d.filename for d in docs]
         
@@ -128,12 +114,25 @@ def render_sidebar(
                     options=doc_names,
                     default=current_session.selected_docs if current_session.selected_docs else doc_names[:1],
                 )
+            else:
+                selected_filter_docs = []
 
-        # Clear button and doc manager
+        # ----------------- Document Uploading -----------------
         st.markdown("<hr style='margin:12px 0;'>", unsafe_allow_html=True)
-        col_rst = st.columns(1)[0]
+        st.markdown("##### 📁 Document Ingestion")
+
+        uploaded_files = st.file_uploader(
+            "Upload files",
+            type=["pdf", "docx", "txt", "md", "csv", "xlsx", "html"],
+            accept_multiple_files=True,
+            label_visibility="collapsed",
+        )
+
+        col_proc, col_rst = st.columns(2)
+        with col_proc:
+            process_btn = st.button("⚡ Process", use_container_width=True)
         with col_rst:
-            reset_all_btn = st.button("🗑️ Clear All Index", use_container_width=True)
+            reset_all_btn = st.button("🗑️ Clear All", use_container_width=True)
 
         if reset_all_btn:
             db.clear_all_documents()
@@ -141,10 +140,11 @@ def render_sidebar(
             st.toast("Cleared all stored documents!", icon="🗑️")
             st.rerun()
 
+        # Document List Explorer
         with st.expander("📚 Stored Files", expanded=False):
             render_document_manager(db, on_delete_callback=lambda fname: on_rebuild_index())
 
-        # RAG Advanced
+        # ----------------- Advanced Settings -----------------
         with st.expander("⚙️ Advanced RAG Settings", expanded=False):
             hybrid_search = st.toggle("Hybrid Search (BM25 + Dense)", value=True)
             enable_reranking = st.toggle("Context Reranker", value=True)
@@ -168,6 +168,8 @@ def render_sidebar(
         return {
             "api_key": api_key,
             "model_id": selected_model_id,
+            "uploaded_files": uploaded_files,
+            "process_btn": process_btn,
             "selected_filter_docs": selected_filter_docs,
             "hybrid_search": hybrid_search,
             "enable_reranking": enable_reranking,
@@ -177,7 +179,4 @@ def render_sidebar(
             "chunk_overlap": chunk_overlap,
             "temperature": temperature,
             "theme": theme,
-            "response_style": response_style,
-            "voice_answers": voice_answers,
         }
-
