@@ -357,38 +357,8 @@ def render_sidebar(
                 st.sidebar.success(f"✅ Indexed {new_count} new chunk(s)!")
                 st.rerun()
 
-        # Show stored documents compactly
-        docs = db.get_documents()
-        if docs:
-            with st.expander(f"📚 {len(docs)} document(s) indexed", expanded=False):
-                for doc in docs:
-                    icon = {"pdf": "📕", "docx": "📘", "pptx": "📊", "csv": "📊",
-                            "excel": "📊", "xlsx": "📊"}.get(doc.file_type, "📄")
-                    size_kb = doc.file_size_bytes / 1024
-                    size_str = f"{size_kb:.1f} KB" if size_kb < 1024 else f"{size_kb/1024:.1f} MB"
-                    col_i, col_info, col_del = st.columns([1, 6, 1])
-                    with col_i:
-                        st.markdown(
-                            f"<div style='font-size:1.2rem; padding-top:4px;'>{icon}</div>",
-                            unsafe_allow_html=True,
-                        )
-                    with col_info:
-                        st.markdown(
-                            f"**{doc.filename}**  \n"
-                            f"<span style='font-size:0.72rem; color:var(--text-lo);'>"
-                            f"{doc.chunk_count} chunks · {size_str}</span>",
-                            unsafe_allow_html=True,
-                        )
-                    with col_del:
-                        if st.button("🗑️", key=f"del_doc_{doc.doc_id}", help="Remove document"):
-                            db.delete_document(doc.filename)
-                            on_rebuild_index()
-                            st.session_state["_last_uploaded_hash"] = ""
-                            st.toast(f"Deleted {doc.filename}", icon="🗑️")
-                            st.rerun()
-                    st.markdown(
-                        "<hr style='margin:3px 0; opacity:0.12;'/>", unsafe_allow_html=True
-                    )
+        # Removed stored documents list section
+
 
         # ── Advanced RAG Settings ────────────────────────────────────────
         with st.expander("⚙️ Advanced RAG Settings", expanded=False):
