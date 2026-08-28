@@ -484,15 +484,14 @@ Respond with ONLY the executable python code block. No explanations, no markdown
                 
                 # Terminal Status Indicators
                 status_box = st.empty()
-                status_text = ""
+                status_list = []
 
                 def log_terminal(msg):
-                    nonlocal status_text
-                    status_text += f"> {msg}<br>"
+                    status_list.append(f"> {msg}<br>")
                     status_box.markdown(
                         f"""
                         <div style="font-family:'Share Tech Mono', monospace; color:#00ff88; background:#020508; padding:10px; border-radius:6px; border:1px solid #00ff88; margin-bottom:12px;">
-                            {status_text}
+                            {"".join(status_list)}
                         </div>
                         """,
                         unsafe_allow_html=True
