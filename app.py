@@ -173,32 +173,12 @@ st.markdown(get_css_styles(theme=controls["theme"]), unsafe_allow_html=True)
 # Main Header & Status Dashboard
 # ============================================================================
 
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    st.markdown('<div class="neura-brand">🧠 NeuraDocs</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="neura-subhead">Enterprise AI Document Intelligence · Hybrid Search · Contextual Reranking · Citations</div>',
-        unsafe_allow_html=True,
-    )
+st.markdown('<div class="neura-brand">🧠 NeuraDocs</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="neura-subhead">Enterprise AI Document Intelligence · Hybrid Search · Contextual Reranking · Citations</div>',
+    unsafe_allow_html=True,
+)
 
-with col_h2:
-    all_docs = db.get_documents()
-    num_docs = len(all_docs)
-    num_chunks = len(vector_store.chunks)
-    if num_docs > 0:
-        st.markdown(
-            f'<div style="text-align:right; padding-top:10px;">'
-            f'<span class="pill-badge pill-success"><span class="pill-dot"></span>{num_docs} Docs ({num_chunks} Chunks) Indexed</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            f'<div style="text-align:right; padding-top:10px;">'
-            f'<span class="pill-badge pill-warning"><span class="pill-dot"></span>No Documents Indexed</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
 
 # ============================================================================
 # Suggested Prompt Chips (when no chat history)
