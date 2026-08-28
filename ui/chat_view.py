@@ -27,74 +27,56 @@ _VOICE_BUTTON_HTML = """
     background: transparent;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    padding: 4px 0;
-    height: 52px;
+    justify-content: center;
+    height: 44px;
+    width: 44px;
     overflow: hidden;
   }
   #mic-btn {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    border: 2px solid rgba(124,92,255,0.6);
-    background: linear-gradient(135deg, rgba(124,92,255,0.15), rgba(53,213,255,0.10));
+    border: 1.5px solid rgba(124,92,255,0.5);
+    background: rgba(12, 14, 24, 0.8);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.25s ease;
-    position: relative;
+    transition: all 0.2s ease;
     outline: none;
-    flex-shrink: 0;
   }
   #mic-btn:hover {
-    border-color: #7c5cff;
-    background: linear-gradient(135deg, rgba(124,92,255,0.30), rgba(53,213,255,0.18));
-    transform: scale(1.08);
-    box-shadow: 0 0 14px rgba(124,92,255,0.45);
+    border-color: #35d5ff;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(53,213,255,0.4);
   }
   #mic-btn.recording {
     border-color: #ff4d6d;
-    background: linear-gradient(135deg, rgba(255,77,109,0.25), rgba(255,92,173,0.15));
-    animation: micPulse 1s infinite;
+    background: rgba(255,77,109,0.15);
+    animation: micPulse 1.2s infinite;
   }
   @keyframes micPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255,77,109,0.5); }
-    50%       { box-shadow: 0 0 0 8px rgba(255,77,109,0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,77,109,0.4); }
+    50%       { box-shadow: 0 0 0 6px rgba(255,77,109,0); }
   }
-  #mic-icon { font-size: 18px; line-height:1; pointer-events:none; }
-  #mic-status {
-    margin-left: 10px;
-    font-size: 0.72rem;
-    color: #6d7594;
-    font-family: 'Inter', sans-serif;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 160px;
-  }
-  #mic-status.active { color: #35d5ff; }
-  #mic-status.error  { color: #ff4d6d; }
+  #mic-icon { font-size: 16px; line-height:1; pointer-events:none; }
 </style>
 </head>
 <body>
-  <button id="mic-btn" title="Click to record voice message">
+  <button id="mic-btn" title="Click to speak">
     <span id="mic-icon">🎙️</span>
   </button>
-  <span id="mic-status">Voice input</span>
 
 <script>
 (function() {
-  var btn    = document.getElementById('mic-btn');
-  var status = document.getElementById('mic-status');
+  var btn = document.getElementById('mic-btn');
   var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    status.textContent = 'Not supported in this browser';
-    status.className = 'error';
     btn.disabled = true;
-    btn.style.opacity = '0.4';
+    btn.style.opacity = '0.3';
     btn.style.cursor = 'not-allowed';
+    btn.title = 'Speech Recognition not supported in this browser';
     return;
   }
 
@@ -113,8 +95,7 @@ _VOICE_BUTTON_HTML = """
       try {
         recognition.start();
       } catch(e) {
-        status.textContent = 'Mic error — allow microphone access';
-        status.className = 'error';
+        console.error('Microphone access failed:', e);
       }
     }
   });
@@ -123,63 +104,65 @@ _VOICE_BUTTON_HTML = """
     recording = true;
     btn.classList.add('recording');
     document.getElementById('mic-icon').textContent = '⏹️';
-    status.textContent = 'Listening…';
-    status.className = 'active';
   };
 
   recognition.onend = function() {
     recording = false;
     btn.classList.remove('recording');
     document.getElementById('mic-icon').textContent = '🎙️';
-    if (status.className === 'active') {
-      status.textContent = 'Voice input';
-      status.className = '';
-    }
   };
 
   recognition.onerror = function(e) {
     recording = false;
     btn.classList.remove('recording');
     document.getElementById('mic-icon').textContent = '🎙️';
-    var msg = {
-      'not-allowed'  : 'Microphone permission denied',
-      'no-speech'    : 'No speech detected — try again',
-      'network'      : 'Network error — check connection',
-      'audio-capture': 'No microphone found'
-    }[e.error] || ('Error: ' + e.error);
-    status.textContent = msg;
-    status.className = 'error';
-    setTimeout(function(){ status.textContent = 'Voice input'; status.className = ''; }, 3500);
+    console.error('Speech recognition error:', e.error);
   };
 
   recognition.onresult = function(e) {
     var transcript = e.results[0][0].transcript.trim();
     if (!transcript) return;
 
-    status.textContent = '✓ ' + transcript.substring(0, 40) + (transcript.length > 40 ? '…' : '');
-    status.className = 'active';
-
-    // Send transcript to Streamlit via postMessage / query param trick
-    // Write it to the Streamlit chat input if accessible, else use URL param
+    // Send the voice transcription to Streamlit
     try {
-      // Try to find and fill the Streamlit chat input in the parent frame
-      var inputs = window.parent.document.querySelectorAll('textarea[data-testid="stChatInput"]');
+      // 1. Try parent document textarea manipulation (fastest)
+      var parentDoc = window.parent.document;
+      var inputs = parentDoc.querySelectorAll('textarea[data-testid="stChatInput"]');
       if (inputs.length > 0) {
-        var nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-          window.parent.HTMLTextAreaElement.prototype, 'value'
-        ).set;
-        nativeInputValueSetter.call(inputs[0], transcript);
-        inputs[0].dispatchEvent(new window.parent.Event('input', { bubbles: true }));
-        inputs[0].focus();
+        var inputEl = inputs[0];
+        
+        // Use React setter wrapper to trigger input events correctly
+        var valueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+        var prototypeSetter = Object.getOwnPropertyDescriptor(window.parent.HTMLTextAreaElement.prototype, 'value').set;
+        var setter = prototypeSetter || valueSetter;
+        
+        setter.call(inputEl, transcript);
+        inputEl.dispatchEvent(new window.parent.Event('input', { bubbles: true }));
+        inputEl.focus();
+        
+        // Automatically submit the message by simulating Enter key or clicking the submit button
+        setTimeout(function() {
+          var submitBtn = parentDoc.querySelector('button[data-testid="stChatInputSubmitButton"]');
+          if (submitBtn) {
+            submitBtn.click();
+          } else {
+            // Trigger Enter key event on the textarea
+            var enterEvent = new window.parent.KeyboardEvent('keydown', {
+              bubbles: true, cancelable: true, key: 'Enter', keyCode: 13
+            });
+            inputEl.dispatchEvent(enterEvent);
+          }
+        }, 100);
+      } else {
+        throw new Error("Textarea not found");
       }
     } catch(err) {
-      // Fallback: set query param for Streamlit to pick up
-      var url = new URL(window.parent.location.href);
+      // 2. Cross-origin / standard fallback: communicate using URL search params
+      var parentWindow = window.parent;
+      var url = new URL(parentWindow.location.href);
       url.searchParams.set('voice_input', transcript);
-      window.parent.history.replaceState({}, '', url.toString());
+      parentWindow.location.href = url.toString();
     }
-
-    setTimeout(function(){ status.textContent = 'Voice input'; status.className = ''; }, 3000);
   };
 })();
 </script>

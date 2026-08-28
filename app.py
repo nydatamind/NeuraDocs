@@ -230,13 +230,57 @@ for msg in current_session.messages:
 # Chat Input & RAG Pipeline Execution
 # ============================================================================
 
+# ---------------------------------------------------------------------------
+# Query Param Fallback Detection & Injector
+# ---------------------------------------------------------------------------
+voice_query = st.query_params.get("voice_input", "")
+if voice_query:
+    st.query_params.clear()
+    st.session_state["voice_input_value"] = voice_query
+
 user_input = st.chat_input(
     "Ask anything about your documents..."
     if vector_store.is_ready()
     else "Upload documents in the sidebar to start asking questions..."
 )
 
-active_question = suggested_prompt or user_input
+# Render microphone next to the chat input using CSS injection
+st.markdown(
+    """
+    <style>
+    /* Position the voice recognition iframe absolute inside the chat input container */
+    div[data-testid="stChatInput"] {
+        position: relative;
+        padding-right: 60px !important;
+    }
+    .voice-iframe-container {
+        position: fixed;
+        bottom: 46px;
+        right: 154px;
+        z-index: 999999;
+        width: 44px;
+        height: 44px;
+    }
+    /* Small screen adjust */
+    @media (max-width: 768px) {
+        .voice-iframe-container {
+            bottom: 46px;
+            right: 90px;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Display voice button container floating beside input
+voice_container = st.empty()
+with voice_container:
+    st.markdown('<div class="voice-iframe-container">', unsafe_allow_html=True)
+    render_voice_and_export_controls()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+active_question = st.session_state.pop("voice_input_value", None) or suggested_prompt or user_input
 
 if active_question:
     api_key = controls["api_key"]
@@ -347,9 +391,8 @@ if active_question:
 # Export & Voice Controls (at bottom of chat)
 # ============================================================================
 
-if current_session.messages:
-    st.write("")
-    render_voice_and_export_controls()
+# Removed bottom rendering to only use the floating input next to input bar
+
 
 
 # ============================================================================
