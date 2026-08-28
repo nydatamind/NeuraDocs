@@ -349,29 +349,8 @@ if active_question:
 
 if current_session.messages:
     st.write("")
-    render_voice_and_export_controls(
-        on_export_markdown=lambda: st.download_button(
-            "Download Markdown File",
-            data=export_session_to_markdown(current_session),
-            file_name=f"neuradocs_chat_{current_session.title[:15]}.md",
-            mime="text/markdown",
-            key="dl_md_btn",
-        ),
-        on_export_text=lambda: st.download_button(
-            "Download Text File",
-            data=export_session_to_text(current_session),
-            file_name=f"neuradocs_chat_{current_session.title[:15]}.txt",
-            mime="text/plain",
-            key="dl_txt_btn",
-        ),
-        on_export_json=lambda: st.download_button(
-            "Download JSON File",
-            data=export_session_to_json(current_session),
-            file_name=f"neuradocs_chat_{current_session.title[:15]}.json",
-            mime="application/json",
-            key="dl_json_btn",
-        ),
-    )
+    render_voice_and_export_controls()
+
 
 # ============================================================================
 # Welcome / Empty State

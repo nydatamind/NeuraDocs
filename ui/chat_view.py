@@ -209,23 +209,6 @@ def render_voice_and_export_controls(
     on_export_text=None,
     on_export_json=None,
 ):
-    col_mic, col_exp1, col_exp2, col_exp3 = st.columns([2, 1, 1, 1])
+    # Render only the voice input component, removed the export buttons
+    components.html(_VOICE_BUTTON_HTML, height=52, scrolling=False)
 
-    with col_mic:
-        # Embedded Web Speech API voice button
-        components.html(_VOICE_BUTTON_HTML, height=52, scrolling=False)
-
-    with col_exp1:
-        if st.button("📥 Export .MD", key="btn_exp_md", help="Download conversation as Markdown"):
-            if on_export_markdown:
-                on_export_markdown()
-
-    with col_exp2:
-        if st.button("📄 Export .TXT", key="btn_exp_txt", help="Download conversation as Text"):
-            if on_export_text:
-                on_export_text()
-
-    with col_exp3:
-        if st.button("💾 Export .JSON", key="btn_exp_json", help="Download conversation as JSON"):
-            if on_export_json:
-                on_export_json()
