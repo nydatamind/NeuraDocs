@@ -182,13 +182,19 @@ with col_h1:
     )
 
 with col_h2:
-    # Always show developer badge in top-right corner
+    # Always show developer badge — same style as sidebar
     st.markdown(
-        f'<div style="text-align:right; padding-top:6px;">'
-        f'<span class="dev-badge"><span class="dev-dot"></span>Developed by <b>Nitin Yadav</b></span>'
-        f'</div>',
+        """
+        <div style="display:flex; justify-content:flex-end; align-items:center; padding-top:8px;">
+            <span class="dev-badge">
+                <span class="dev-dot"></span>
+                Developed by <b>Nitin Yadav</b>
+            </span>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
+
 
 
 # ============================================================================
@@ -235,11 +241,43 @@ user_input = st.chat_input(
     else "Upload documents in the sidebar to start asking questions..."
 )
 
-# Render invisible voice component — mic button is injected into parent DOM
-render_voice_and_export_controls()
+# Render microphone next to the chat input using CSS injection
+st.markdown(
+    """
+    <style>
+    /* Position the voice recognition iframe absolute inside the chat input container */
+    div[data-testid="stChatInput"] {
+        position: relative;
+        padding-right: 60px !important;
+    }
+    .voice-iframe-container {
+        position: fixed;
+        bottom: 46px;
+        right: 154px;
+        z-index: 999999;
+        width: 44px;
+        height: 44px;
+    }
+    /* Small screen adjust */
+    @media (max-width: 768px) {
+        .voice-iframe-container {
+            bottom: 46px;
+            right: 90px;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Display voice button container floating beside input
+voice_container = st.empty()
+with voice_container:
+    st.markdown('<div class="voice-iframe-container">', unsafe_allow_html=True)
+    render_voice_and_export_controls()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 active_question = st.session_state.pop("voice_input_value", None) or suggested_prompt or user_input
-
 
 if active_question:
     api_key = controls["api_key"]
