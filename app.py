@@ -313,7 +313,8 @@ if active_question:
 
                 # 2. Hybrid Retrieval (BM25 + FAISS via RRF)
                 # Filter to only search across currently uploaded documents in the sidebar
-                active_sources = [f.name for f in uploaded_files] if uploaded_files else []
+                active_files = controls.get("uploaded_files", [])
+                active_sources = [f.name for f in active_files] if active_files else []
                 candidate_k = max(controls["top_k"] * 3, 12)
                 candidates = hybrid_retriever.search(
                     query=search_query,
@@ -321,6 +322,7 @@ if active_question:
                     filter_sources=active_sources if active_sources else None,
                     hybrid_enabled=controls["hybrid_search"],
                 )
+
 
 
                 # 3. Contextual Reranking

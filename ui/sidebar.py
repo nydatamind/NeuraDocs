@@ -395,6 +395,7 @@ def render_sidebar(
             "api_key": api_key,
             "model_id": DEFAULT_MODEL,
             "selected_filter_docs": [],
+            "uploaded_files": uploaded_files,
             "hybrid_search": hybrid_search,
             "enable_reranking": enable_reranking,
             "query_rewriting": query_rewriting,
